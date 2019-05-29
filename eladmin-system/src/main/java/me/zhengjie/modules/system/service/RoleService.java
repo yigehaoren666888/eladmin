@@ -3,6 +3,7 @@ package me.zhengjie.modules.system.service;
 import me.zhengjie.modules.system.domain.Menu;
 import me.zhengjie.modules.system.domain.Role;
 import me.zhengjie.modules.system.service.dto.RoleDTO;
+import me.zhengjie.modules.system.service.dto.RoleSmallDTO;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -48,12 +49,16 @@ public interface RoleService {
     void delete(Long id);
 
     /**
+     * key的名称如有修改，请同步修改 UserServiceImpl 中的 update 方法
      * findByUsers_Id
      * @param id
      * @return
      */
+    @Cacheable(key = "'findByUsers_Id:' + #p0")
+    List<RoleSmallDTO> findByUsers_Id(Long id);
+
     @Cacheable(keyGenerator = "keyGenerator")
-    List<Role> findByUsers_Id(Long id);
+    Integer findByRoles(Set<Role> roles);
 
     /**
      * updatePermission

@@ -7,7 +7,9 @@ import me.zhengjie.exception.EntityExistException;
 import me.zhengjie.modules.system.repository.RoleRepository;
 import me.zhengjie.modules.system.service.RoleService;
 import me.zhengjie.modules.system.service.dto.RoleDTO;
+import me.zhengjie.modules.system.service.dto.RoleSmallDTO;
 import me.zhengjie.modules.system.service.mapper.RoleMapper;
+import me.zhengjie.modules.system.service.mapper.RoleSmallMapper;
 import me.zhengjie.utils.ValidationUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -29,6 +31,9 @@ public class RoleServiceImpl implements RoleService {
 
     @Autowired
     private RoleMapper roleMapper;
+
+    @Autowired
+    private RoleSmallMapper roleSmallMapper;
 
     @Override
     public RoleDTO findById(long id) {
@@ -65,6 +70,7 @@ public class RoleServiceImpl implements RoleService {
         role.setRemark(resources.getRemark());
         role.setDataScope(resources.getDataScope());
         role.setDepts(resources.getDepts());
+        role.setLevel(resources.getLevel());
         roleRepository.save(role);
     }
 
@@ -99,7 +105,16 @@ public class RoleServiceImpl implements RoleService {
     }
 
     @Override
-    public List<Role> findByUsers_Id(Long id) {
-        return roleRepository.findByUsers_Id(id).stream().collect(Collectors.toList());
+    public List<RoleSmallDTO> findByUsers_Id(Long id) {
+        return roleSmallMapper.toDto(roleRepository.findByUsers_Id(id).stream().collect(Collectors.toList()));
+    }
+
+    @Override
+    public Integer findByRoles(Set<Role> roles) {
+        Set<RoleDTO> roleDTOS = new HashSet<>();
+        for (Role role : roles) {
+            roleDTOS.add(findById(role.getId()));
+        }
+        return Collections.min(roleDTOS.stream().map(RoleDTO::getLevel).collect(Collectors.toList()));
     }
 }

@@ -37,7 +37,6 @@ spring:
     #连接超时时间
     timeout: 5000
 
-
 #七牛云
 qiniu:
   # 文件大小 /M

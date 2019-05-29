@@ -1,5 +1,6 @@
 package me.zhengjie.modules.system.service.impl;
 
+import me.zhengjie.modules.monitor.service.RedisService;
 import me.zhengjie.modules.system.domain.User;
 import me.zhengjie.exception.EntityExistException;
 import me.zhengjie.exception.EntityNotFoundException;
@@ -29,6 +30,9 @@ public class UserServiceImpl implements UserService {
     @Autowired
     private UserMapper userMapper;
 
+    @Autowired
+    private RedisService redisService;
+
     @Override
     public UserDTO findById(long id) {
         Optional<User> user = userRepository.findById(id);
@@ -50,7 +54,7 @@ public class UserServiceImpl implements UserService {
 
         // 默认密码 123456，此密码是加密后的字符
         resources.setPassword("e10adc3949ba59abbe56e057f20f883e");
-        resources.setAvatar("https://aurora-1255840532.cos.ap-chengdu.myqcloud.com/8918a306ea314404835a9196585c4b75.jpeg");
+        resources.setAvatar("https://i.loli.net/2019/04/04/5ca5b971e1548.jpeg");
         return userMapper.toDto(userRepository.save(resources));
     }
 
@@ -73,6 +77,14 @@ public class UserServiceImpl implements UserService {
             throw new EntityExistException(User.class,"email",resources.getEmail());
         }
 
+        // 如果用户的角色改变了，需要手动清理下缓存
+        if (!resources.getRoles().equals(user.getRoles())) {
+            String key = "role::loadPermissionByUser:" + user.getUsername();
+            redisService.delete(key);
+            key = "role::findByUsers_Id:" + user.getId();
+            redisService.delete(key);
+        }
+
         user.setUsername(resources.getUsername());
         user.setEmail(resources.getEmail());
         user.setEnabled(resources.getEnabled());
@@ -90,18 +102,17 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User findByName(String userName) {
+    public UserDTO findByName(String userName) {
         User user = null;
         if(ValidationUtil.isEmail(userName)){
             user = userRepository.findByEmail(userName);
         } else {
             user = userRepository.findByUsername(userName);
         }
-
         if (user == null) {
             throw new EntityNotFoundException(User.class, "name", userName);
         } else {
-            return user;
+            return userMapper.toDto(user);
         }
     }
 
